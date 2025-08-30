@@ -1,13 +1,39 @@
-Instruções:
 
 
-Para realizar esta atividade, você deve começar treinando o modelo de rede neural para detecção de fraudes em cartões de crédito. Os dados do cartão podem ser encontrados no link de conteúdo. Depois, obtenha as métricas de desempenho deste modelo como a precisão, recall, F1-score e AUC-ROC.  
+## IR ALÉM: Curva Precision–Recall
 
+Como a base é altamente desbalanceada (apenas ~0,17% de fraudes), além da AUC-ROC também avaliei a **Curva Precision–Recall (PR)**.  
+Essa curva mostra melhor o trade-off entre detectar fraudes (**Recall**) e evitar falsos positivos (**Precision**).  
+A métrica associada é o **Average Precision (AP)**.
 
-Em seguida, defina uma faixa de valores para os hiperparâmetros que deseja otimizar. Aplique técnicas de ajuste fino de hiperparâmetros para melhorar o desempenho do modelo. Você pode usar métodos como grid search e random search para encontrar as melhores combinações de hiperparâmetros.
+### Código
+```python
+from sklearn.metrics import precision_recall_curve, average_precision_score
+import matplotlib.pyplot as plt
 
+def pr_data(model):
+    proba = model.predict_proba(X_test)[:, 1]
+    p, r, _ = precision_recall_curve(y_test, proba)
+    ap = average_precision_score(y_test, proba)
+    return p, r, ap
 
-Após otimizar o modelo, compare os resultados obtidos com os resultados do modelo original. Analise como as mudanças nos hiperparâmetros impactaram o desempenho, considerando cada uma das métricas mencionadas. Por fim, documente todas as etapas realizadas e as observações feitas durante o processo.
+models = {
+    "Baseline": pipe_baseline,
+    "GridSearch (best)": grid.best_estimator_,
+    "RandomizedSearch (best)": rnd.best_estimator_,
+}
 
+plt.figure(figsize=(6,5))
+for name, mdl in models.items():
+    p, r, ap = pr_data(mdl)
+    plt.plot(r, p, label=f"{name} (AP={ap:.4f})")
 
-Entregue o link do caderno `.ipynb` em um repositório GitHub.
+# linha de referência: prevalência da classe positiva
+plt.hlines(y_test.mean(), 0, 1, colors="gray", linestyles="--", label="Taxa base")
+
+plt.xlabel("Recall")
+plt.ylabel("Precision")
+plt.title("Precision–Recall Curve")
+plt.legend()
+plt.grid(True)
+plt.show()
